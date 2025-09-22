@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Nikhil Gift Shopy</title>
+<style>
+    /* Reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f0f2f5;
+        color: #333;
+        text-align: center;
+    }
+
+    header {
+        background-color: #ff6699;
+        color: white;
+        padding: 20px 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+        font-size: 2em;
+        margin-bottom: 10px;
+    }
+
+    nav {
+        margin-top: 10px;
+    }
+
+    nav button {
+        margin: 5px;
+        padding: 10px 25px;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+        background-color: white;
+        color: #ff6699;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    nav button:hover {
+        background-color: #ff3366;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .page { padding: 20px; }
+
+    .gift-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .gift {
+        background: white;
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: 0.3s;
+    }
+
+    .gift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+
+    .gift img {
+        width: 100%;
+        border-radius: 10px;
+    }
+
+    .gift h3 { margin: 10px 0 5px; font-size: 1.2em; }
+    .gift p { font-weight: bold; margin-bottom: 10px; }
+
+    .gift button {
+        background-color: #ff6699;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+
+    .gift button:hover { background-color: #ff3366; }
+
+    /* Checkout form */
+    #checkout form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        max-width: 400px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    #checkout input {
+        width: 90%;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid #ccc;
+        font-size: 1em;
+    }
+
+    #checkout button {
+        width: 50%;
+        padding: 10px;
+        font-size: 1em;
+    }
+
+    #checkoutMessage {
+        margin-top: 15px;
+        font-weight: bold;
+        color: green;
+    }
+
+    /* Cart items */
+    #cartItems .gift {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    #cartItems img { width: 80px; }
+
+</style>
+</head>
+<body>
+<header>
+    <h1>🎁 Nikhil Gift Shopy 🎁</h1>
+    <nav>
+        <button onclick="showPage('shop')">Shop</button>
+        <button onclick="showPage('cart')">Cart</button>
+        <button onclick="showPage('checkout')">Checkout</button>
+    </nav>
+</header>
+
+<section id="shop" class="page">
+    <h2>Available Gifts</h2>
+    <div class="gift-list">
+        {% for gift in gifts %}
+        <div class="gift">
+            <img src="{{ url_for('static', filename=gift.image) }}" alt="{{ gift.name }}">
+            <h3>{{ gift.name }}</h3>
+            <p>₹{{ gift.price }}</p>
+            <button onclick="addToCart({{ gift.id }})">Add to Cart</button>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section id="cart" class="page" style="display:none;">
+    <h2>Your Cart</h2>
+    <div id="cartItems"></div>
+</section>
+
+<section id="checkout" class="page" style="display:none;">
+    <h2>Checkout</h2>
+    <form id="checkoutForm">
+        <input type="text" name="name" placeholder="Your Name" required>
+        <input type="email" name="email" placeholder="Your Email" required>
+        <input type="text" name="location" placeholder="Your Location" required>
+        <button type="submit">Buy Now</button>
+    </form>
+    <p id="checkoutMessage"></p>
+</section>
+
+<script>
+function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    document.getElementById(page).style.display = 'block';
+    if (page === 'cart') loadCart();
+}
+
+function addToCart(giftId) {
+    fetch(`/add_to_cart/${giftId}`, {method: 'POST'})
+    .then(res => res.json())
+    .then(data => alert(data.message));
+}
+
+function loadCart() {
+    fetch('/get_cart')
+    .then(res => res.json())
+    .then(cart => {
+        let cartDiv = document.getElementById('cartItems');
+        cartDiv.innerHTML = "";
+        if (cart.length === 0) {
+            cartDiv.innerHTML = "<p>Your cart is empty.</p>";
+            return;
+        }
+        cart.forEach(item => {
+            cartDiv.innerHTML += `
+                <div class="gift">
+                    <img src="/static/${item.image}" alt="${item.name}">
+                    <h3>${item.name}</h3>
+                    <p>₹${item.price}</p>
+                </div>
+            `;
+        });
+    });
+}
+
+document.getElementById("checkoutForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(this));
+    fetch("/checkout", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(resp => {
+        document.getElementById("checkoutMessage").innerText = resp.message;
+        showPage('shop');
+    });
+});
+</script>
+</body>
+</html>
+
